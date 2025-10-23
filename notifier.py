@@ -1,4 +1,3 @@
-# notifier.py
 import aiohttp
 from typing import Optional
 from config import BOT_TOKEN, CHAT_ID
@@ -14,12 +13,7 @@ async def send(message: str, chat_id: Optional[str] = None):
         print("[WARN] CHAT_ID ausente — não enviando mensagem")
         return
     url = API.format(token=BOT_TOKEN)
-    payload = {
-        "chat_id": cid,
-        "text": message,
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": True
-    }
+    payload = {"chat_id": cid, "text": message}
     async with aiohttp.ClientSession() as sess:
         async with sess.post(url, json=payload, timeout=20) as resp:
             if resp.status != 200:
