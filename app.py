@@ -44,3 +44,32 @@ if __name__ == "__main__":
         asyncio.run(loop())
     except KeyboardInterrupt:
         print("Saindo...")
+from logica import build_match_url, pretty_name
+
+# ... dentro do loop onde você já sabe que vai enviar alerta ...
+liga  = jogo.get("league_name") or jogo.get("league") or "Liga"
+home  = pretty_name(jogo, "home")
+away  = pretty_name(jogo, "away")
+placar = jogo.get("score") or f"{jogo.get('home_score',0)}-{jogo.get('away_score',0)}"
+minuto = jogo.get("minute") or "0"
+sot    = jogo.get("sot") or jogo.get("shots_on_target") or "?"
+final  = jogo.get("danger") or jogo.get("final") or "?"
+atk    = jogo.get("attack") or jogo.get("atk") or "?"
+
+link = build_match_url(jogo)
+
+msg = (
+    f"⚽ *{forca or 'BTTS'} – {liga}*\n"
+    f"*{home}* x *{away}*\n"
+    f"{minuto}' | {placar}\n"
+    f"SOT:{sot} Final:{final} Atk:{atk}\n"
+    f"[Ver partida]({link})"
+)
+
+# python-telegram-bot: garanta parse_mode Markdown e sem preview
+bot.send_message(
+    chat_id=CHAT_ID,
+    text=msg,
+    parse_mode="Markdown",
+    disable_web_page_preview=True,
+)
