@@ -37,3 +37,21 @@ def classify_btssignal(m: Dict) -> Tuple[str, str]:
         return "OK", f"SOT:{sot_sum} Final:{st_sum} Atk:{attacks}"
     else:
         return "FRACO", f"SOT:{sot_sum} Final:{st_sum} Atk:{attacks}"
+import re, unicodedata, time, os
+
+def _slug(s: str) -> str:
+    s = unicodedata.normalize("NFKD", s or "").encode("ascii","ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", s).strip("-")
+
+def match_key(jogo: dict) -> str:
+    # Se existir um ID único do jogo:
+    for k in ("id", "fixture_id", "sofascore_id", "match_id"):
+        if jogo.get(k):
+            return f"id:{jogo[k]}"
+
+    liga = jogo.get("league", "")
+    home = jogo.get("home", "")
+    away = jogo.get("away", "")
+    minuto = jogo.get("minute", "")
+
+    return f"k:{_slug(liga)}|{_slug(home)}|{_slug(away)}|{minuto}"
