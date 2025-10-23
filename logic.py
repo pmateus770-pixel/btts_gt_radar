@@ -55,3 +55,39 @@ def match_key(jogo: dict) -> str:
     minuto = jogo.get("minute", "")
 
     return f"k:{_slug(liga)}|{_slug(home)}|{_slug(away)}|{minuto}"
+import urllib.parse
+
+def _first(*vals):
+    for v in vals:
+        if v:
+            return v
+    return ""
+
+def build_match_url(jogo: dict) -> str:
+    """
+    Tenta montar um link direto da partida.
+    Se não houver id conhecido, cai num link de busca do Google.
+    Você pode adaptar para SofaScore/Flashscore/365 se tiver o ID.
+    """
+    # Se vier algum id conhecido:
+    if jogo.get("sofascore_id"):
+        return f"https://www.sofascore.com/event/{jogo['sofascore_id']}"
+    if jogo.get("flashscore_id"):
+        return f"https://www.flashscore.com/match/{jogo['flashscore_id']}"
+    if jogo.get("fixture_id"):
+        # Ex.: sua própria rota/back-end, se existir
+        return f"https://seuservico.exemplo/match/{jogo['fixture_id']}"
+
+    # Fallback: link de busca com liga + mandante + visitante
+    liga = _first(jogo.get("league_name"), jogo.get("league"))
+    home = _first(jogo.get("home_name"), jogo.get("home"))
+    away = _first(jogo.get("away_name"), jogo.get("away"))
+    q = f"{liga} {home} x {away}"
+    return "https://www.google.com/search?q=" + urllib.parse.quote_plus(q)
+    def pretty_name(jogo: dict, side: str) -> str:
+    # side = "home" ou "away"
+    return _first(
+        jogo.get(f"{side}_name"),
+        jogo.get(f"{side}Name"),
+        jogo.get(side),              # fallback
+    ) or "N/D"
