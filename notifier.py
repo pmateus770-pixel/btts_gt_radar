@@ -24,3 +24,14 @@ async def send(message: str, chat_id: Optional[str] = None):
             if resp.status != 200:
                 txt = await resp.text()
                 print(f"[TELEGRAM][{resp.status}] {txt}")
+from estado import was_sent, mark_sent
+from logica import match_key
+
+mk = match_key(jogo)
+if was_sent(mk):
+    continue  # já foi alertado, pula
+
+# envia mensagem
+send_telegram(msg)
+
+mark_sent(mk)
