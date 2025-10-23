@@ -1,4 +1,4 @@
-
+# notifier.py
 import aiohttp
 from typing import Optional
 from config import BOT_TOKEN, CHAT_ID
@@ -17,21 +17,11 @@ async def send(message: str, chat_id: Optional[str] = None):
     payload = {
         "chat_id": cid,
         "text": message,
-        "parse_mode": "Markdown"
+        "parse_mode": "Markdown",
+        "disable_web_page_preview": True
     }
     async with aiohttp.ClientSession() as sess:
         async with sess.post(url, json=payload, timeout=20) as resp:
             if resp.status != 200:
                 txt = await resp.text()
                 print(f"[TELEGRAM][{resp.status}] {txt}")
-from estado import was_sent, mark_sent
-from logica import match_key
-
-mk = match_key(jogo)
-if was_sent(mk):
-    continue  # já foi alertado, pula
-
-# envia mensagem
-send_telegram(msg)
-
-mark_sent(mk)
