@@ -81,3 +81,4 @@ A função `get_live_matches()` deve retornar uma lista como:
 ## Observação de segurança
 - Nunca exponha seu `BOT_TOKEN` publicamente.
 - Este projeto não interage com casas de aposta.
+Primeiro deploy 🚀
