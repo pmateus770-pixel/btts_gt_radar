@@ -1,54 +1,44 @@
-import asyncio
-from config import POLL_SECONDS, LEAGUE_FILTER, MODE
-from notificador import send
-from logica import classify_btssignal
-from estado import was_sent, mark_sent
-from fonte_de_dados import get_live_matches, match_key, pretty_name, bet365_link
+import aiohttp, urllib.parse
+from typing import Optional
+from config import BOT_TOKEN, CHAT_ID
 
-def _ok_to_alert(nivel: str) -> bool:
-    return nivel in ("FORTE", "OK")
+API = "https://api.telegram.org/bot{token}/sendMessage"
 
-async def worker():
-    print("BTTS Radar online ✅")
-    while True:
-        try:
-            jogos = await get_live_matches()
-            if LEAGUE_FILTER:
-                jogos = [j for j in jogos if str(j.get("league","")).upper() == LEAGUE_FILTER.upper()]
+def _search_link(league, home, away):
+    q = f"{league} {home} x {away}"
+    return "https://www.google.com/search?q=" + urllib.parse.quote_plus(q)
 
-            for j in jogos:
-                nivel, resumo = classify_btssignal(j)
-                if not _ok_to_alert(nivel):
-                    continue
+def _fmt_line(m):
+    h,a = m["score_home"], m["score_away"]
+    return f"{m['minute']}' | {h}-{a}"
 
-                key = match_key(j)
-                if was_sent(key):
-                    continue
+def _fmt_stats(m, resumo):
+    return f"SOT:{int(m['shots_on_target_home'])+int(m['shots_on_target_away'])} Final:{int(m['shots_total_home'])+int(m['shots_total_away'])} {resumo}"
 
-                home = pretty_name(j, "home")
-                away = pretty_name(j, "away")
-                minute = j.get("minute", 0)
-                score = f"{int(j.get('score_home',0))}-{int(j.get('score_away',0))}"
+def render_message(nivel: str, m: dict, resumo: str) -> str:
+    t1, t2 = m["home"], m["away"]
+    title = f"BTTS {nivel} - {m['league']}"
+    linha = _fmt_line(m)
+    stats = _fmt_stats(m, resumo)
+    link = m.get("link") or _search_link(m['league'], t1, t2)
+    return (
+        f"{title}\n"
+        f"{t1} x {t2}\n"
+        f"{linha}\n"
+        f"{stats}\n"
+        f"Ver partida: {link}"
+    )
 
-                url = bet365_link(j)
-                msg = (
-                    f"BTTS {nivel} – {j.get('league','N/D')}\n"
-                    f"{home} x {away}\n"
-                    f"{minute}' | {score}\n"
-                    f"{resumo}\n"
-                    f"Ver partida: {url}"
-                )
-                if MODE != "demo":
-                    await send(msg)
-                else:
-                    print("[DEMO] ", msg.replace("\n", " | "))
-
-                mark_sent(key)
-
-        except Exception as e:
-            print("[ERR] LOOP:", e)
-
-        await asyncio.sleep(POLL_SECONDS)
-
-if __name__ == "__main__":
-    asyncio.run(worker())
+async def send(message: str, chat_id: Optional[str] = None):
+    if not BOT_TOKEN: 
+        print("[WARN] BOT_TOKEN ausente"); return
+    cid = chat_id or CHAT_ID
+    if not cid:
+        print("[WARN] CHAT_ID ausente"); return
+    url = API.format(token=BOT_TOKEN)
+    payload = {"chat_id": cid, "text": message, "disable_web_page_preview": False}
+    async with aiohttp.ClientSession() as sess:
+        async with sess.post(url, json=payload, timeout=20) as resp:
+            if resp.status != 200:
+                txt = await resp.text()
+                print(f"[TELEGRAM][{resp.status}] {txt}")
